@@ -7,6 +7,7 @@ public class FuncionariosMapper {
             FuncionariosModel funcionariosModel = new FuncionariosModel();
             funcionariosModel.setId(funcionariosDTO.getId());
             funcionariosModel.setNome(funcionariosDTO.getNome());
+            funcionariosModel.setEmail(funcionariosDTO.getEmail());
             funcionariosModel.setUrl_img(funcionariosDTO.getUrl_img());
             funcionariosModel.setCargo(funcionariosDTO.getCargo());
             funcionariosModel.setIdade(funcionariosDTO.getIdade());
@@ -19,6 +20,7 @@ public class FuncionariosMapper {
         FuncionariosDTO funcionariosDTO = new FuncionariosDTO();
         funcionariosDTO.setId(funcionariosModel.getId());
         funcionariosDTO.setNome(funcionariosModel.getNome());
+        funcionariosDTO.setEmail(funcionariosModel.getEmail());
         funcionariosDTO.setUrl_img(funcionariosModel.getUrl_img());
         funcionariosDTO.setCargo(funcionariosModel.getCargo());
         funcionariosDTO.setIdade(funcionariosModel.getIdade());
