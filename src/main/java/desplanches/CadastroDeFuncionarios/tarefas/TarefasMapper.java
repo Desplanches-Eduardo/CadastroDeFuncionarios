@@ -8,16 +8,16 @@ public class TarefasMapper {
         TarefasModel tarefasModel = new TarefasModel();
         tarefasModel.setId(tarefasDTO.getId());
         tarefasModel.setNome(tarefasDTO.getNome());
-        tarefasModel.setDificuldade(TarefasDTO.getDificuldade());
+        tarefasModel.setDificuldade(tarefasDTO.getDificuldade());
 
 
         return tarefasModel;
     }
     public TarefasDTO map(TarefasModel tarefasModel){
-        TarefasDTO funcionariosDTO = new TarefasDTO();
+        TarefasDTO tarefasDTO = new TarefasDTO();
         tarefasDTO.setId(tarefasModel.getId());
         tarefasDTO.setNome(tarefasModel.getNome());
         tarefasDTO.setDificuldade(tarefasModel.getDificuldade());
-        return funcionariosDTO;
+        return tarefasDTO;
     }
 }
