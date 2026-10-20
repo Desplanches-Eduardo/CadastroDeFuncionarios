@@ -82,8 +82,7 @@ O schema é versionado com Flyway, em `db/migrations`. A `V1` cria as duas tabel
 
 Os dois `Repository` estendem `JpaRepository`, então o CRUD básico vem pronto do Spring Data. Os
 `Service` chamam o repositório e convertem entre entidade e DTO pelo `Mapper`. Cada um dos dois
-`POST` da API cria o recurso e devolve o id; a mensagem de texto das rotas de tarefa ainda fala
-em "missão", que é o nome que essa entidade tinha no projeto de ninjas.
+`POST` da API cria o recurso e devolve o nome e o id.
 
 ## O que falta
 
