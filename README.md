@@ -1,5 +1,7 @@
 # CadastroDeFuncionarios
 
+![Java 21](https://img.shields.io/badge/Java-21-6366f1?style=flat-square&labelColor=1e293b&logo=openjdk&logoColor=white) ![Spring Boot 4.1.1](https://img.shields.io/badge/Spring_Boot-4.1.1-6366f1?style=flat-square&labelColor=1e293b&logo=springboot&logoColor=white) ![Flyway](https://img.shields.io/badge/Flyway-6366f1?style=flat-square&labelColor=1e293b&logo=flyway&logoColor=white) ![H2](https://img.shields.io/badge/H2-6366f1?style=flat-square&labelColor=1e293b&logo=h2database&logoColor=white) ![Swagger UI](https://img.shields.io/badge/Swagger_UI-6366f1?style=flat-square&labelColor=1e293b&logo=swagger&logoColor=white)
+
 API REST com Spring Boot para cadastro de funcionários e de tarefas. Peguei o projeto de
 [ninjas](https://github.com/Desplanches-Eduardo/cadastroDeNinjas) e refiz o mesmo recorte em
 outro domínio, para praticar de novo modelagem, migração versionada, separação em camadas e
