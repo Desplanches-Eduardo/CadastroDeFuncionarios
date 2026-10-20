@@ -9,7 +9,7 @@ public class TarefasMapper {
         tarefasModel.setId(tarefasDTO.getId());
         tarefasModel.setNome(tarefasDTO.getNome());
         tarefasModel.setDificuldade(tarefasDTO.getDificuldade());
-
+        tarefasModel.setFuncionarios(tarefasDTO.getFuncionarios());
 
         return tarefasModel;
     }
@@ -18,6 +18,7 @@ public class TarefasMapper {
         tarefasDTO.setId(tarefasModel.getId());
         tarefasDTO.setNome(tarefasModel.getNome());
         tarefasDTO.setDificuldade(tarefasModel.getDificuldade());
+        tarefasDTO.setFuncionarios(tarefasModel.getFuncionarios());
         return tarefasDTO;
     }
 }
