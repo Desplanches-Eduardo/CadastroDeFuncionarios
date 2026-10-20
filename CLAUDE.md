@@ -31,7 +31,7 @@ export DATABASE_PASSWORD=''
 
 With the app running: Swagger UI at `/swagger-ui/index.html`, OpenAPI JSON at `/v3/api-docs`, H2 console at `/h2-console`.
 
-The configuration also accepts, without code changes, a file database (`DATABASE_URL='jdbc:h2:file:<path>;AUTO_SERVER=TRUE'`, which keeps data between runs) and another port (`SERVER_PORT=8081`). The frontend's `scripts/backend.sh` uses the file database in `~/projetos/dados-cadastro-funcionarios/`; its browser tests use a second instance on 8081 with an in-memory database so they never touch that data.
+The configuration also accepts, without code changes, a file database (`DATABASE_URL='jdbc:h2:file:<path>;AUTO_SERVER=TRUE'`, which keeps data between runs) and another port (`SERVER_PORT=8081`). The frontend's `scripts/backend.sh` uses the file database in `~/projetos/dados-cadastro-funcionarios/`. The frontend's own tests are Vitest against a fake in-memory API (MSW), so they never touch that data and don't need this backend running at all.
 
 ## Architecture
 
