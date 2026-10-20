@@ -5,10 +5,11 @@
 API REST com Spring Boot para cadastro de funcionários e de tarefas. Peguei o projeto de
 [ninjas](https://github.com/Desplanches-Eduardo/cadastroDeNinjas) e refiz o mesmo recorte em
 outro domínio, para praticar de novo modelagem, migração versionada, separação em camadas e
-documentação das rotas — agora sem copiar as telas, porque o frontend vai ser escrito à parte.
+documentação das rotas — agora sem copiar as telas, porque o frontend ia ser escrito à parte.
 
 São duas entidades, com CRUD de funcionário e de tarefa, o banco versionado com Flyway e a
-documentação no Swagger. Compila, sobe e as rotas respondem. Falta o frontend e falta teste.
+documentação no Swagger. Compila, sobe e as rotas respondem. O frontend saiu depois, em outro
+repositório, e está pronto. Aqui falta teste.
 
 ## Como rodar
 
@@ -86,12 +87,21 @@ Os dois `Repository` estendem `JpaRepository`, então o CRUD básico vem pronto 
 `Service` chamam o repositório e convertem entre entidade e DTO pelo `Mapper`. Cada um dos dois
 `POST` da API cria o recurso e devolve o nome e o id.
 
-## O que falta
+## Frontend
 
-Frontend: não tem nenhum. As telas em Thymeleaf do projeto de ninjas ficaram de fora de
-propósito, porque quero escrever o frontend separado — ainda não decidi se em React ou Angular —
-e aprender a usar o Claude Code fazendo isso. A coluna `url_img` já existe no banco e no DTO
-esperando o que vier dali.
+Ficou pronto, em outro repositório:
+[cadastro-funcionarios-web](https://github.com/Desplanches-Eduardo/cadastro-funcionarios-web).
+React com Vite e TypeScript, um quadro de turno onde cada tarefa é uma coluna e cada funcionário
+é uma ficha presa nela, com arraste entre colunas e gaveta lateral para cadastrar e editar.
+Escrevi com o Claude Code, em fases que revisei, e as particularidades da API são tratadas do
+lado de lá: o Vite faz proxy para a porta 8080 (a API não libera CORS), o cliente converte as
+respostas — o `POST` responde texto, o `PUT` grava o objeto inteiro, o `500` de email repetido e
+o `409` de tarefa com gente viram mensagem na tela. O backend não mudou nada por causa dele.
+
+As telas em Thymeleaf do projeto de ninjas ficaram de fora de propósito, e a coluna `url_img` já
+existia no banco e no DTO esperando a foto que a ficha mostra.
+
+## O que falta
 
 Teste: fora o `contextLoads` que o Spring Initializr gera, não há nenhum. As rotas foram testadas
 à mão, pelo `curl`.
@@ -128,5 +138,4 @@ erro de integridade aparecia cru. Com a checagem sai `409`, que é o código par
 estado atual do recurso.
 
 O nome da coluna da imagem é `url_img` no model e no DTO, e não `imgUrl` como no projeto de
-ninjas. O campo veio assim e ficou, para o DTO continuar sendo o mesmo que o frontend vai
-consumir depois.
+ninjas. O campo veio assim e ficou, para o DTO continuar sendo o mesmo que o frontend consome.

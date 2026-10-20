@@ -48,5 +48,5 @@ Package-by-feature under `desplanches.CadastroDeFuncionarios`: `funcionarios/` a
 
 - Schema is owned by Flyway; migrations live in `src/main/resources/db/migrations` (note: `migrations`, plural, configured in `application.properties`). `V1__Create_tables.sql` creates `tb_tarefas` and `tb_cadastro`.
 - `spring.jpa.hibernate.ddl-auto=validate`: Hibernate never changes the schema. Any entity field change needs a new `V<n>__*.sql` migration, or startup fails validation. Don't edit `V1`.
-- The image column is `url_img` in DB, entity and DTO (deliberately, not `imgUrl` as in the ninjas project) because the future frontend will consume that DTO shape.
+- The image column is `url_img` in DB, entity and DTO (deliberately, not `imgUrl` as in the ninjas project) because the frontend consumes that DTO shape.
 - `idade` is a primitive `int` in the DTO; with Spring Boot 4's Jackson a request body missing it is rejected with `400`.
