@@ -29,7 +29,7 @@ public class TarefasController {
     public ResponseEntity<String> criarTarefa(@RequestBody TarefasDTO tarefasDTO){
         TarefasDTO tarefaCriada = tarefasService.criarTarefa(tarefasDTO);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body("Missão criada com sucesso: " + tarefaCriada.getNome() + "(ID): " + tarefaCriada.getId());
+                .body("Tarefa criada com sucesso: " + tarefaCriada.getNome() + "(ID): " + tarefaCriada.getId());
     }
 
     @GetMapping("/listar")
@@ -96,7 +96,7 @@ public class TarefasController {
         TarefasDTO tarefa = tarefasService.listarTarefasPorId(id);
         if (tarefa == null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Missão não encontrada. Missão com o ID: " + id + " não existe em nossos registros");
+                    .body("Tarefa não encontrada. Tarefa com o ID: " + id + " não existe em nossos registros");
         }
         List<FuncionariosModel> funcionarios = tarefa.getFuncionarios();
         if (funcionarios != null && !funcionarios.isEmpty()){
@@ -104,6 +104,6 @@ public class TarefasController {
                     .body("Tarefa não deletada: " + funcionarios.size() + " funcionários(s) ainda estão vinculados a ela");
         }
         tarefasService.deletarTarefa(id);
-        return ResponseEntity.ok("A missão com ID " + id + " foi deletada com sucesso");
+        return ResponseEntity.ok("A tarefa com ID " + id + " foi deletada com sucesso");
     }
 }
