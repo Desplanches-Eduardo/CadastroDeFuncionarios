@@ -1,53 +1,66 @@
 package desplanches.CadastroDeFuncionarios.funcionarios;
 
-import desplanches.CadastroDeFuncionarios.tarefas.TarefasDTO;
+import desplanches.CadastroDeFuncionarios.common.RecursoNaoEncontradoException;
 import desplanches.CadastroDeFuncionarios.tarefas.TarefasModel;
+import desplanches.CadastroDeFuncionarios.tarefas.TarefasRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class FuncionariosService {
     private final FuncionariosRepository  funcionariosRepository;
-    private final FuncionariosMapper funcionariosMapper;
+    private final TarefasRepository tarefasRepository;
 
-    public FuncionariosService(FuncionariosRepository funcionariosRepository, FuncionariosMapper funcionariosMapper) {
+    public FuncionariosService(FuncionariosRepository funcionariosRepository, TarefasRepository tarefasRepository) {
         this.funcionariosRepository = funcionariosRepository;
-        this.funcionariosMapper = funcionariosMapper;
+        this.tarefasRepository = tarefasRepository;
     }
 
     public List<FuncionariosDTO> listarFuncionarios(){
-        List<FuncionariosModel> funcionarios = funcionariosRepository.findAll();
-        return funcionarios.stream()
-                .map(funcionariosMapper::map)
-                .collect(Collectors.toList());
+        return funcionariosRepository.findAll().stream()
+                .map(FuncionariosDTO::fromEntity)
+                .toList();
     }
 
     public FuncionariosDTO listarFuncionariosPorId(Long id){
-        Optional<FuncionariosModel> funcionariosPorId = funcionariosRepository.findById(id);
-        return funcionariosPorId.map(funcionariosMapper::map).orElse(null);
+        return FuncionariosDTO.fromEntity(buscarOuFalhar(id));
     }
 
-    public FuncionariosDTO criarFuncionario(FuncionariosDTO funcionariosDTO){
-        FuncionariosModel funcionario= funcionariosMapper.map(funcionariosDTO);
-        funcionario = funcionariosRepository.save(funcionario);
-        return funcionariosMapper.map(funcionario);
+    @Transactional
+    public FuncionariosDTO criarFuncionario(FuncionariosDTO dto){
+        FuncionariosModel funcionario = FuncionariosDTO.toEntity(dto, buscarTarefa(dto.tarefasId()));
+        return FuncionariosDTO.fromEntity(funcionariosRepository.save(funcionario));
     }
 
-    public void deletarfuncionario(Long id){
-        funcionariosRepository.deleteById(id);
+    @Transactional
+    public void deletarFuncionario(Long id){
+        funcionariosRepository.delete(buscarOuFalhar(id));
     }
 
-    public FuncionariosDTO alterarFuncionario(Long id, FuncionariosDTO funcionariosDTO){
-        Optional<FuncionariosModel> funcionarioid = funcionariosRepository.findById(id);
-        if (funcionarioid.isPresent()){
-            FuncionariosModel funcionarioAlterado = funcionariosMapper.map(funcionariosDTO);
-            funcionarioAlterado.setId(id);
-            FuncionariosModel missaoSalva = funcionariosRepository.save(funcionarioAlterado);
-            return funcionariosMapper.map(missaoSalva);
-        }
-        return null;
+    @Transactional
+    public FuncionariosDTO alterarFuncionario(Long id, FuncionariosDTO dto) {
+        FuncionariosModel funcionario = buscarOuFalhar(id);
+        funcionario.setNome(dto.nome());
+        funcionario.setEmail(dto.email());
+        funcionario.setUrlImg(dto.urlImg());
+        funcionario.setCargo(dto.cargo());
+        funcionario.setIdade(dto.idade());
+        funcionario.setTarefas(buscarTarefa(dto.tarefasId()));
+        return FuncionariosDTO.fromEntity(funcionario);
+    }
+
+    private FuncionariosModel buscarOuFalhar(Long id) {
+        return funcionariosRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Funcionário com o ID " + id + " não existe em nossos registros"));
+    }
+
+    private TarefasModel buscarTarefa(Long tarefasId) {
+        if (tarefasId == null) return null;
+        return tarefasRepository.findById(tarefasId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Tarefa com o ID " + tarefasId + " não existe"));
     }
 }

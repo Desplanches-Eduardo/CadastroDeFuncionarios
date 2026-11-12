@@ -18,8 +18,8 @@ public class FuncionariosModel {
     private String nome;
     @Column(unique = true)
     private String email;
-    @Column(name = "Url_img")
-    private String url_img;
+    @Column(name = "url_img")
+    private String urlImg;
     private String cargo;
     private int idade;
     @ManyToOne

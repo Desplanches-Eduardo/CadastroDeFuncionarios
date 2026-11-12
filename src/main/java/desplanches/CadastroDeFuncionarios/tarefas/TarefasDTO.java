@@ -1,16 +1,17 @@
 package desplanches.CadastroDeFuncionarios.tarefas;
 
-import desplanches.CadastroDeFuncionarios.funcionarios.FuncionariosModel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import java.util.List;
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class TarefasDTO {
-    private Long id;
-    private String nome;
-    private String dificuldade;
-    private List<FuncionariosModel> funcionarios;
+
+public record TarefasDTO(Long id, String nome, String dificuldade) {
+    public static TarefasDTO fromEntity(TarefasModel t){
+        return new TarefasDTO(
+                t.getId(), t.getNome(), t.getDificuldade()
+        );
+    }
+
+    public static TarefasModel toEntity(TarefasDTO dto){
+        TarefasModel model = new TarefasModel();
+        model.setNome(dto.nome);
+        model.setDificuldade(dto.dificuldade);
+        return model;
+    }
 }
