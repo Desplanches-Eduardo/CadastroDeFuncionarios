@@ -1,6 +1,7 @@
 package desplanches.CadastroDeFuncionarios.funcionarios;
 
 import desplanches.CadastroDeFuncionarios.common.RecursoNaoEncontradoException;
+import desplanches.CadastroDeFuncionarios.common.RegraDeNegocioException;
 import desplanches.CadastroDeFuncionarios.tarefas.TarefasModel;
 import desplanches.CadastroDeFuncionarios.tarefas.TarefasRepository;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,9 @@ public class FuncionariosService {
 
     @Transactional
     public FuncionariosDTO criarFuncionario(FuncionariosDTO dto){
+        if (funcionariosRepository.existsByEmail(dto.email())) {
+            throw new RegraDeNegocioException("Já existe um funcionário com o email " + dto.email());
+        }
         FuncionariosModel funcionario = FuncionariosDTO.toEntity(dto, buscarTarefa(dto.tarefasId()));
         return FuncionariosDTO.fromEntity(funcionariosRepository.save(funcionario));
     }
@@ -42,6 +46,9 @@ public class FuncionariosService {
     @Transactional
     public FuncionariosDTO alterarFuncionario(Long id, FuncionariosDTO dto) {
         FuncionariosModel funcionario = buscarOuFalhar(id);
+        if (funcionariosRepository.existsByEmailAndIdNot(dto.email(), id)) {
+            throw new RegraDeNegocioException("Já existe um funcionário com o email " + dto.email());
+        }
         funcionario.setNome(dto.nome());
         funcionario.setEmail(dto.email());
         funcionario.setUrlImg(dto.urlImg());
