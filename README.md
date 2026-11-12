@@ -8,8 +8,9 @@ outro domínio, para praticar de novo modelagem, migração versionada, separaç
 documentação das rotas — agora sem copiar as telas, porque o frontend ia ser escrito à parte.
 
 São duas entidades, com CRUD de funcionário e de tarefa, o banco versionado com Flyway e a
-documentação no Swagger. Compila, sobe e as rotas respondem. O frontend saiu depois, em outro
-repositório, e está pronto. Aqui falta teste.
+documentação no Swagger. Os DTOs são records, as regras de negócio ficam no service e os erros
+viram `404` e `409` num handler global. Compila, sobe e as rotas respondem. O frontend saiu
+depois, em outro repositório. Aqui falta teste e validação de entrada.
 
 ## Como rodar
 
@@ -26,14 +27,13 @@ Sobe na porta 8080 e o console do H2 fica em `http://localhost:8080/h2-console`.
 
 O banco nasce vazio: a migração cria as tabelas, não os funcionários. Para ter dado, os `POST`
 da API ou o console do H2. Como a tabela de funcionário aponta para a de tarefa, a tarefa precisa
-existir antes: cadastrar funcionário com uma tarefa que não existe responde `500`, de chave
-estrangeira violada.
+existir antes: cadastrar funcionário com um `tarefasId` que não existe responde `404`.
 
     curl -X POST http://localhost:8080/tarefas/criar -H 'Content-Type: application/json' \
       -d '{"nome":"Fechar o mes","dificuldade":"media"}'
 
     curl -X POST http://localhost:8080/funcionarios/criar -H 'Content-Type: application/json' \
-      -d '{"nome":"Ana Souza","email":"ana@empresa.com","cargo":"Analista","idade":28,"tarefas":{"id":1}}'
+      -d '{"nome":"Ana Souza","email":"ana@empresa.com","cargo":"Analista","idade":28,"tarefasId":1}'
 
 Para rodar o teste: `./mvnw test`, com as mesmas variáveis de ambiente exportadas.
 
@@ -69,9 +69,22 @@ As duas entidades têm as mesmas cinco rotas, com os mesmos nomes: `POST /criar`
 | PUT | `/tarefas/alterar/{id}` | Altera uma tarefa |
 | DELETE | `/tarefas/deletar/{id}` | Remove uma tarefa |
 
-Os `POST` respondem `201` com uma mensagem dizendo o nome e o id criado, e os `GET` por id
-respondem `404` quando o id não existe. Os dois `DELETE` respondem `404` para um id inexistente,
-e o de tarefa responde `409` quando ainda há funcionários apontando para ela.
+Os `POST` respondem `201` com o objeto criado, os `GET` e o `PUT` respondem `200` com o objeto
+e os `DELETE` respondem `204` sem corpo. O corpo de funcionário é este:
+
+    {"id": 1, "nome": "Ana Souza", "email": "ana@empresa.com", "urlImg": null,
+     "cargo": "Analista", "idade": 28, "tarefasId": 1}
+
+e o de tarefa é `{"id": 1, "nome": "Fechar o mes", "dificuldade": "media"}`. O `id` mandado num
+`POST` é ignorado, porque quem gera é o banco.
+
+| Status | Quando |
+| --- | --- |
+| `404` | Funcionário ou tarefa com id que não existe, inclusive o `tarefasId` no corpo |
+| `409` | Email já cadastrado em outro funcionário, ou `DELETE` de tarefa com funcionários vinculados |
+| `400` | JSON malformado ou sem a `idade` |
+
+O `404` e o `409` respondem com uma mensagem em texto dizendo o motivo.
 
 ## Banco e migrações
 
@@ -83,9 +96,22 @@ serialização circular entre as duas entidades.
 
 O schema é versionado com Flyway, em `db/migrations`. A `V1` cria as duas tabelas.
 
-Os dois `Repository` estendem `JpaRepository`, então o CRUD básico vem pronto do Spring Data. Os
-`Service` chamam o repositório e convertem entre entidade e DTO pelo `Mapper`. Cada um dos dois
-`POST` da API cria o recurso e devolve o nome e o id.
+Os dois `Repository` estendem `JpaRepository`, então o CRUD básico vem pronto do Spring Data,
+e as consultas de regra (`existsByTarefasId`, `existsByEmail`, `existsByEmailAndIdNot`) são
+derivadas do nome do método.
+
+## Camadas
+
+- **DTO**: `record` imutável, com `fromEntity` e `toEntity` estáticos para converter. O DTO de
+  funcionário leva só o `tarefasId`, não a entidade da tarefa, e o de tarefa não leva a lista de
+  funcionários.
+- **Service**: busca no banco, aplica as regras e lança exceção quando algo não pode. É ele que
+  transforma o `tarefasId` na tarefa, que confere email repetido e que barra o `DELETE` de tarefa
+  com funcionários. O `PUT` altera a entidade que já existe, dentro de `@Transactional`, e o JPA
+  grava a mudança sozinho no fim do método.
+- **Controller**: recebe, chama o service e devolve. Não tem `if` decidindo status.
+- **`common`**: `RecursoNaoEncontradoException` e `RegraDeNegocioException`, e o
+  `GlobalExceptionHandler` (`@RestControllerAdvice`) que transforma as duas em `404` e `409`.
 
 ## Frontend
 
@@ -98,32 +124,41 @@ lado de lá: o Vite faz proxy para a porta 8080 (a API não libera CORS), o clie
 respostas — o `POST` responde texto, o `PUT` grava o objeto inteiro, o `500` de email repetido e
 o `409` de tarefa com gente viram mensagem na tela. O backend não mudou nada por causa dele.
 
+A refatoração para records mudou o contrato que o frontend lê: `url_img` virou `urlImg`, o
+objeto `tarefas` virou `tarefasId`, os `POST` devolvem JSON no lugar de texto, os `DELETE`
+devolvem `204` sem corpo e email repetido é `409`. O frontend precisa acompanhar essas mudanças.
+
 As telas em Thymeleaf do projeto de ninjas ficaram de fora de propósito, e a coluna `url_img` já
-existia no banco e no DTO esperando a foto que a ficha mostra.
+existia no banco e no model esperando a foto que a ficha mostra.
 
 ## O que falta
 
 Teste: fora o `contextLoads` que o Spring Initializr gera, não há nenhum. As rotas foram testadas
 à mão, pelo `curl`.
 
-Os dois `PUT` da API gravam a entidade inteira, então campo que não vai no corpo vira nulo — um
-`PUT /funcionarios/alterar/{id}` com nome, email, cargo e idade devolve o `url_img` e a `tarefas`
-nulos. E o corpo precisa trazer a idade, que é `int` no DTO: mandar um campo só responde `400`,
-porque o Jackson do Spring Boot 4 recusa dto com primitivo ausente. Ou seja, os dois `PUT` só
-aceitam o objeto completo.
+Validação de entrada: hoje entra funcionário com nome vazio, email `abc` ou idade negativa. O
+próximo passo é `spring-boot-starter-validation`, com `@NotBlank`, `@Email` e `@Positive` no
+record, `@Valid` no controller e um `400` com os campos errados.
 
-Mandar um `id` no corpo do `POST /criar` cai no caminho de atualização do `save` e a resposta é
-`500`, nas duas entidades. Id em criação não faz sentido, e o comportamento está igual dos dois
-lados; vale fixar `id` em `null` nos dois `Service` antes de salvar, quando entrar o teste da
-criação.
-
-O `email` é `unique` no banco, então dois funcionários com o mesmo email não entram, mas o erro
-chega como `500` na resposta, sem tratamento. Mesmo comportamento do projeto de ninjas.
+Os dois `PUT` substituem todos os campos, como manda o `PUT`: um
+`PUT /funcionarios/alterar/{id}` sem `urlImg` e sem `tarefasId` grava os dois nulos. E o corpo
+precisa trazer a idade, que é `int` no DTO, senão responde `400`. Se um dia precisar mandar só
+um campo, o caminho é um `PATCH`.
 
 ## Decisões
 
-Lombok nas entidades (`@Data`, `@NoArgsConstructor`, `@AllArgsConstructor`) para não escrever
-getter e setter na mão.
+Lombok nas entidades (`@Getter`, `@Setter`, `@NoArgsConstructor`, `@AllArgsConstructor`) para
+não escrever getter e setter na mão. Era `@Data`, mas o `equals` e o `hashCode` que ele gera
+passam pelo relacionamento, e funcionário chamava tarefa que chamava funcionário sem parar.
+
+DTO como `record` com conversão estática, sem classe de mapper. O record já é imutável e tem
+construtor, acessores, `equals` e `toString` prontos, e com dois DTOs pequenos uma classe só para
+converter era camada a mais. A tarefa do funcionário não é convertida no record porque precisa
+ser buscada no banco: quem faz isso é o service, que passa a tarefa pronta para o `toEntity`.
+
+Exceção não checada (`RuntimeException`) para os erros de negócio. Ela atravessa o controller
+sem `throws` em cada método e chega no handler, e o `@Transactional` só faz rollback sozinho
+com exceção não checada.
 
 O `ddl-auto` está em `validate`: quem cria e altera tabela é a migração, o Hibernate só confere
 se as colunas mapeadas existem. Foi a troca pelo `update`, que nunca remove uma coluna nem
@@ -132,10 +167,11 @@ corrige o tipo de outra sozinho.
 As anotações do Swagger ficam no controller, junto da rota que descrevem. Um arquivo OpenAPI
 separado descreveria as mesmas rotas duas vezes e sairia de sincronia no primeiro método novo.
 
-O `DELETE` de tarefa checa os funcionários vinculados antes de chamar o serviço. Sem essa
-checagem a resposta era `500`, porque a chave estrangeira em `tb_cadastro` recusa a remoção e o
-erro de integridade aparecia cru. Com a checagem sai `409`, que é o código para conflito com o
-estado atual do recurso.
+Regra de negócio no service, não no controller nem só no banco. O `DELETE` de tarefa com
+funcionários e o email repetido já eram barrados pelo banco (chave estrangeira e `unique`), mas
+o erro chegava como `500`. O service confere antes e lança `RegraDeNegocioException`, que vira
+`409`, o código para conflito com o estado atual do recurso. O banco continua como última
+barreira.
 
-O nome da coluna da imagem é `url_img` no model e no DTO, e não `imgUrl` como no projeto de
-ninjas. O campo veio assim e ficou, para o DTO continuar sendo o mesmo que o frontend consome.
+O campo da imagem é `urlImg` em Java e no JSON, seguindo o camelCase, e a coluna no banco
+continua `url_img`, pelo `@Column`. Assim não precisou de migração nova.
