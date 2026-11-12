@@ -2,15 +2,14 @@ package desplanches.CadastroDeFuncionarios.tarefas;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import desplanches.CadastroDeFuncionarios.funcionarios.FuncionariosModel;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
 @Entity
 @Table(name = "tb_tarefas")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class TarefasModel {

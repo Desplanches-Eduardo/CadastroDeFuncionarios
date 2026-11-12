@@ -1,6 +1,10 @@
 package desplanches.CadastroDeFuncionarios.tarefas;
 
+import desplanches.CadastroDeFuncionarios.common.RecursoNaoEncontradoException;
+import desplanches.CadastroDeFuncionarios.common.RegraDeNegocioException;
+import desplanches.CadastroDeFuncionarios.funcionarios.FuncionariosRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,43 +14,51 @@ import java.util.stream.Collectors;
 public class TarefasService {
 
     private final TarefasRepository tarefasRepository;
-    private final TarefasMapper tarefasMapper;
+    private final FuncionariosRepository funcionariosRepository;
 
-    public TarefasService(TarefasRepository tarefasRepository, TarefasMapper tarefasMapper) {
+    public TarefasService(TarefasRepository tarefasRepository, FuncionariosRepository funcionariosRepository) {
         this.tarefasRepository = tarefasRepository;
-        this.tarefasMapper = tarefasMapper;
+        this.funcionariosRepository = funcionariosRepository;
     }
 
     public List<TarefasDTO> listarTarefas(){
-        List<TarefasModel> tarefas = tarefasRepository.findAll();
-        return tarefas.stream()
-                .map(tarefasMapper::map)
-                .collect(Collectors.toList());
+       return tarefasRepository.findAll().stream()
+               .map(TarefasDTO::fromEntity)
+               .toList();
     }
 
     public TarefasDTO listarTarefasPorId(Long id){
-        Optional<TarefasModel> tarefasPorId = tarefasRepository.findById(id);
-        return tarefasPorId.map(tarefasMapper::map).orElse(null);
+        return TarefasDTO.fromEntity(buscarOuFalhar(id));
     }
 
-    public TarefasDTO criarTarefa(TarefasDTO tarefasDTO){
-        TarefasModel tarefas= tarefasMapper.map(tarefasDTO);
-        tarefas = tarefasRepository.save(tarefas);
-        return tarefasMapper.map(tarefas);
+    @Transactional
+    public TarefasDTO criarTarefa(TarefasDTO dto){
+        TarefasModel tarefa = TarefasDTO.toEntity(dto);
+        return TarefasDTO.fromEntity(tarefasRepository.save(tarefa));
     }
 
+    @Transactional
     public void deletarTarefa(Long id){
-        tarefasRepository.deleteById(id);
+        TarefasModel tarefa = buscarOuFalhar(id);
+        if (funcionariosRepository.existsByTarefasId(id)){
+            throw new RegraDeNegocioException(
+                    "Tarefa não deletada: há funcionários vinculados a ela");
+        }
+        tarefasRepository.delete(tarefa);
     }
 
-    public TarefasDTO alterarTarefa(Long id, TarefasDTO tarefasDTO){
-        Optional<TarefasModel> tarefaid = tarefasRepository.findById(id);
-        if (tarefaid.isPresent()){
-            TarefasModel tarefaAlterada = tarefasMapper.map(tarefasDTO);
-            tarefaAlterada.setId(id);
-            TarefasModel missaoSalva = tarefasRepository.save(tarefaAlterada);
-            return tarefasMapper.map(missaoSalva);
-        }
-        return null;
+    @Transactional
+    public TarefasDTO alterarTarefa(Long id, TarefasDTO dto){
+        TarefasModel tarefa = buscarOuFalhar(id);
+        tarefa.setNome(dto.nome());
+        tarefa.setDificuldade(dto.dificuldade());
+        return TarefasDTO.fromEntity(tarefa);
     }
+
+    private TarefasModel buscarOuFalhar(Long id) {
+        return tarefasRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Tarefa com o ID " + id + " não existe em nossos registros"));
+    }
+
 }
